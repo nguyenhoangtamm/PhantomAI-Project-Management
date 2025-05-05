@@ -109,15 +109,15 @@
             </tr>
         </thead>
         <tbody>
-            {% for nv in nhanvien %}
+            {% for employee in employees %}
             <tr>
-                <td>{{ nv.id }}</td>
-                <td>{{ nv.hoten }}</td>
-                <td>{{ nv.ngaysinh }}</td>
-                <td>{{ nv.gioitinh }}</td>
-                <td>{{ nv.email }}</td>
-                <td>{{ nv.sdt }}</td>
-                <td><span class="tag">{{ nv.chucvu }}</span></td>
+                <td>{{ employee.id }}</td>
+                <td>{{ employee.fullname }}</td>
+                <td>{{ employee.dateofbirth }}</td>
+                <td>{{ employee.gender }}</td>
+                <td>{{ employee.email }}</td>
+                <td>{{ employee.phonenumber }}</td>
+                <td><span class="tag">{{ employee.position }}</span></td>
                 <td>
                     <button class="action-btn btn-view">Xem</button>
                     <button class="action-btn btn-edit">Sửa</button>

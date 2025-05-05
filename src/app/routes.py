@@ -1,10 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
-from app.models import NhanVien
+from app.models import Employee, Project, Skill, EmployeeSkill,Role
 from app import db
-
-from app.models import DuAn
-from app.models import Kynang
-from app.models import Nhanvien_kynang
 import os
 from dotenv import load_dotenv
 import requests
@@ -14,90 +10,105 @@ main = Blueprint("main", __name__)
 @main.route("/")
 @main.route("/home")
 def home():
-    nhanvien= NhanVien.query.all()
-
-    return render_template("index.html", nhanvien=nhanvien)
+    employees = Employee.query.all()
+    return render_template("index.html", employees=employees)
 
 @main.route("/ai")
 def ai():
-    projects = DuAn.query.all()
-   
-    return render_template("ai.html",projects= projects)
+    projects = Project.query.all()
+    return render_template("ai.html", projects=projects)
+
 @main.route("/suggest", methods=["POST"])
 def phantomai():
     load_dotenv()
-    together_api_key = os.getenv("TOGETHER_API_KEY")
-
-    """Xử lý yêu cầu phân bổ nguồn lực."""
+    # together_api_key = os.getenv("TOGETHER_API_KEY")
+    together_api_key = "20ec9bc306ec0bed85ec37e0d9db9d414c81701d272c6310e8287381f01cae26"
+    """
+# Trả lời theo định dạng:
+#         - Nhiệm vụ: (tên nhiệm vụ)
+#         - Nhân viên được đề xuất: (nhân viên)
+#         - Lý do: (lý do phân bổ)
+#         """
     try:
-        # Lấy dữ liệu từ form
+        # Get project ID from form
         project_id = request.form.get("project")
-        print(project_id)
-        project = DuAn.query.get(project_id)
-        print(project_id)
+        project = Project.query.get(project_id)
         if not project:
-            return jsonify({"error": "Dự án không tồn tại."}), 400
-        description = project.mota
-        nhanviens =NhanVien.query.all()
-        # Tạo danh sách nhân viên và kỹ năng của họ
+            return jsonify({"error": "Project does not exist."}), 400
+
+        description = project.description
+        employees = Employee.query.all()
+        roles = Role.query.all()
+        # Get the roles and their descriptions
+        rolemessages = []
+        for role in roles:
+            rolemessages.append(f"{role.id}: {role.name}")
+
+        # Create a list of employees and their skills
         members = []
-        for nhanvien in nhanviens:
-            skills = db.session.query(Kynang.tenkynang, Nhanvien_kynang.mucdothanhthao, Nhanvien_kynang.sonamkinhnghiem).join(
-            Nhanvien_kynang, Kynang.makynang == Nhanvien_kynang.makynang
-            ).filter(Nhanvien_kynang.manv == nhanvien.manv).all()
+        for employee in employees:
+            skills = db.session.query(Skill.name, EmployeeSkill.proficiencylevel, EmployeeSkill.yearsofexperience).join(
+                EmployeeSkill, Skill.id == EmployeeSkill.skillid
+            ).filter(EmployeeSkill.employeeid == employee.id).all()
             skill_details = ", ".join(
-            [f"{skill[0]} (Mức độ: {skill[1]}, Kinh nghiệm: {skill[2]} năm)" for skill in skills]
+                [f"{skill[0]} (Proficiency: {skill[1]}, Experience: {skill[2]} years)" for skill in skills]
             )
-            members.append(f"{nhanvien.hoten} - {nhanvien.chucvu} - Kỹ năng: {skill_details}")
+            members.append(f"id: {employee.id} - {employee.fullname} - {employee.position} - Skills: {skill_details}")
 
         members = "\n".join(members)
 
-        # Tạo danh sách công việc từ mô tả dự án
+        # Create the prompt for the AI
         prompt = f"""
-Bạn là một hệ thống AI hỗ trợ quản lý dự án.
-Hãy dựa vào danh sách nhân viên và mô tả dự án dưới đây để phân bổ nguồn lực phù hợp.
+        Bạn là một hệ thống AI hỗ trợ quản lý dự án.
+        Dựa trên danh sách nhân viên và mô tả dự án dưới đây, hãy phân bổ nguồn lực một cách hợp lý.
 
-Nhân viên:
-{members}
+        Nhân viên:
+        {members}
 
-Dự án:
-{description}
+        Vai trò:
+        {rolemessages}
 
-Trả lời theo định dạng:
-- Công việc: (tên công việc)
-- Người đề xuất: (tên người thực hiện)
-- Lý do: (lý do phân bổ)
-"""
+        Dự án:
+        {description}
 
-        # Cấu hình header và payload cho API
+        Trả lời theo định dạng JSON thuần túy:
+        (id nhiệm vụ), (id nhân viên), (lý do phân bổ)
+        ví dụ:
+        (1, 2, "Nhân viên này có kỹ năng phù hợp với nhiệm vụ và đã làm việc trong dự án tương tự trước đây.")
+        lưu ý rằng 1 nhiệm vụ có thể được phân bổ cho nhiều nhân viên khác nhau, và 1 nhân viên chỉ có thể đảm nhiệm 1 nhiệm vụ duy nhất.
+        """
+        # Configure headers and payload for the API
         headers = {
             "Authorization": f"Bearer {together_api_key}",
             "Content-Type": "application/json"
         }
 
         data = {
-            "model": "mistralai/Mistral-7B-Instruct-v0.1",
+            "model": "mistralai/Mistral-7B-Instruct-v0.2",
             "prompt": prompt,
-            "max_tokens": 1500,  # Giảm số lượng token để tránh vượt quá giới hạn
+            "max_tokens": 2500,
             "temperature": 0.7,
-            "top_p": 0.85,  # Điều chỉnh để tăng tính đa dạng của phản hồi
+            "top_p": 0.85,
+            # "stop": ["\n\n"]
         }
 
-        # Gửi yêu cầu đến Together AI
-        response = requests.post("https://api.together.xyz/v1/completions", headers=headers, json=data,timeout=20)
-        response.raise_for_status()  # Kiểm tra lỗi HTTP
+        # Send request to Together AI
+        response = requests.post("https://api.together.xyz/v1/completions", headers=headers, json=data, timeout=20)
+        response.raise_for_status()
 
-        # Xử lý phản hồi từ API
+        # Process the API response
         response_data = response.json()
         if "choices" in response_data and response_data["choices"]:
             suggestion = response_data["choices"][0]["text"]
+            # Clean up the suggestion text
+            
             return jsonify({"result": suggestion})
         else:
-            return jsonify({"error": "Không nhận được phản hồi từ Together AI."}), 500
+            return jsonify({"error": "No response from Together AI."}), 500
 
     except requests.exceptions.RequestException as e:
-        # Xử lý lỗi khi gọi API
-        return jsonify({"error": f"Lỗi khi gọi Together AI: {str(e)}"}), 500
+        return jsonify({"error": f"Error calling Together AI: {str(e)}"}), 500
     except Exception as e:
-        # Xử lý lỗi chung
-        return jsonify({"error": f"Đã xảy ra lỗi: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
