@@ -1,4 +1,3 @@
 class Config:
-    SECRET_KEY = "your_secret_key"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///site.db"
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:post77gres@localhost:5432/PhantomAI"
     SQLALCHEMY_TRACK_MODIFICATIONS = False

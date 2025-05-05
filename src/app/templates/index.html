@@ -1,11 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
+    <title>Quản lý thành viên</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-add {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .member-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .member-table th,
+        .member-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-size: 12px;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .status.ranh {
+            background-color: #28a745;
+        }
+
+        .status.ban {
+            background-color: #ffc107;
+        }
+
+        .status.quata {
+            background-color: #dc3545;
+        }
+
+        .action-btn {
+            margin-right: 5px;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-view {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Welcome to PhantomAI Project Management</h1>
+    <h1>Quản lý thành viên</h1>
+    <button class="btn-add">+ Thêm thành viên</button>
+
+    <table class="member-table">
+        <thead>
+            <tr>
+                <th>Mã NV</th>
+                <th>Họ tên</th>
+                <th>Ngày sinh</th>
+                <th>Giới tính</th>
+                <th>Email</th>
+                <th>SĐT</th>
+                <th>Chức vụ</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for nv in nhanvien %}
+            <tr>
+                <td>{{ nv.id }}</td>
+                <td>{{ nv.hoten }}</td>
+                <td>{{ nv.ngaysinh }}</td>
+                <td>{{ nv.gioitinh }}</td>
+                <td>{{ nv.email }}</td>
+                <td>{{ nv.sdt }}</td>
+                <td><span class="tag">{{ nv.chucvu }}</span></td>
+                <td>
+                    <button class="action-btn btn-view">Xem</button>
+                    <button class="action-btn btn-edit">Sửa</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
+
 </html>
