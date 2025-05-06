@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify,redirect,url_for
-from app.models import Employee, Project, Skill, EmployeeSkill,Role
+from app.models import Employee, Project, Skill, EmployeeSkill,Role,ProjectTechnology,Technology,EmployeeProject
 from app import db
 from flask import Blueprint, render_template, request, jsonify
 from app.services.project_analysis import analyze_project_requirements
@@ -91,13 +91,18 @@ def delete_employee(employee_id):
 ## project
 @main.route("/project")
 def project():
+    """
+    Hiển thị danh sách các dự án.
+    """
     projects = Project.query.order_by(Project.id.asc()).all()
+    return render_template("project/project.html", projects=projects)
 
-
-    return render_template("project.html", projects=projects)
 
 @main.route("/project/add", methods=["POST"])
 def add_project():
+    """
+    Thêm một dự án mới.
+    """
     try:
         name = request.form.get("name")
         description = request.form.get("description")
@@ -121,25 +126,40 @@ def add_project():
         db.session.add(new_project)
         db.session.commit()
 
-        return render_template("project.html", projects=Project.query.all())
+        return render_template("project/project.html", projects=Project.query.all())
 
     except Exception as e:
         return f"Đã xảy ra lỗi: {str(e)}", 500
-    
+
+
 @main.route('/project/<int:project_id>')
 def project_details(project_id):
+    """
+    Hiển thị chi tiết một dự án.
+    """
     project = Project.query.get_or_404(project_id)
-    return render_template("details.html", project=project)
+    technologies = Technology.query.join(ProjectTechnology, Technology.id == ProjectTechnology.technologyid)\
+                                   .filter(ProjectTechnology.projectid == project_id).all()
+    employee= Employee.query.join(EmployeeProject, Employee.id == EmployeeProject.employeeid)
+    employee=employee.filter(EmployeeProject.projectid == project_id).all()
+
+    return render_template('project/details.html', project=project, technologies=technologies, employee=employee)
 
 
 @main.route('/project/edit/<int:id>')
 def edit_project(id):
+    """
+    Hiển thị giao diện chỉnh sửa dự án.
+    """
     project = Project.query.get_or_404(id)
-    return render_template('edit_project.html', project=project)
+    return render_template('project/edit_project.html', project=project)
 
-# Sửa dự án
+
 @main.route('/project/update/<int:id>', methods=['POST'])
 def update_project(id):
+    """
+    Cập nhật thông tin dự án.
+    """
     project = Project.query.get_or_404(id)
     project.name = request.form['name']
     project.description = request.form['description']
@@ -150,15 +170,19 @@ def update_project(id):
     project.projectcost = request.form['cost']
 
     db.session.commit()
-    return redirect(url_for('main.home'))  # hoặc 'main.project_list' nếu bạn có view đó 
+    return redirect(url_for('main.project'))
+
 
 @main.route("/project/delete/<int:id>", methods=["POST"])
 def delete_project(id):
+    """
+    Xóa một dự án.
+    """
     project = Project.query.get_or_404(id)
     try:
         db.session.delete(project)
         db.session.commit()
-        return redirect(url_for('main.home'))
+        return redirect(url_for('main.project'))
     except Exception as e:
         return f"Lỗi khi xóa: {str(e)}", 500
 

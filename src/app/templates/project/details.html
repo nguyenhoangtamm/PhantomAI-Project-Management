@@ -36,6 +36,21 @@
             <p><strong>Trạng thái:</strong> {{ project.status }}</p>
             <p><strong>Chi phí:</strong> {{ project.projectcost }} VND</p>
         </div>
+        <div class="mt-4">
+            <h5>Công nghệ sử dụng:</h5>
+            <ul>
+                {% for tech in technologies %}
+                <li>{{ tech.name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="mt-4">
+            <h5>Nhân sự tham gia:</h5>
+            <ul>
+                {% for member in employee %}
+                <li>{{ member.fullname }}</li>
+                {% endfor %}
+            </ul>
         <a href="{{ url_for('main.home') }}" class="btn btn-secondary btn-back">← Quay lại</a>
         <a href="{{ url_for('main.ai') }}" class="btn btn-secondary btn-back">Phân bổ</a>
     </div>
