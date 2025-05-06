@@ -17,17 +17,25 @@ def home():
 @main.route("/ai")
 def ai():
     projects = Project.query.all()
-    return render_template("ai.html", projects=projects)
-
+    technologies = Technology.query.all()
+    return render_template("ai.html", projects=projects, technologies=technologies)
 @main.route("/suggest", methods=["POST"])
 def phantomai():
     load_dotenv()
-    together_api_key = os.getenv("TOGETHER_API_KEY", "20ec9bc306ec0bed85ec37e0d9db9d414c81701d272c6310e8287381f01cae26")
 
     # Phân tích yêu cầu dự án
     project_id = request.form.get("project")
-    project_analysis = analyze_project_requirements(project_id)
-    
+    technologies = request.form.get("selectedTechnologies")
+    technologies = technologies.strip("[]").replace('"', '').split(",") if technologies else []
+    project_analysis = analyze_project_requirements(project_id, technologies)
+    print("Project Analysis:", project_analysis)
+    role_requirements = project_analysis.get("role_requirements", [])
+    for role in role_requirements:
+        role_id = role.get("roleid")
+        if role_id:
+            role_obj = Role.query.get(role_id)
+            if role_obj:
+                role["rolename"] = role_obj.name
     return allocate_resources(project_analysis)
     # return jsonify(project_analysis), 200
 

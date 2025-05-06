@@ -1,4 +1,4 @@
-from app.models import Project, Role
+from app.models import Project, Role,Technology
 from app.services.utils import call_api
 import os
 from dotenv import load_dotenv
@@ -6,28 +6,31 @@ from dotenv import load_dotenv
 load_dotenv()
 together_api_key = os.getenv("TOGETHER_API_KEY", "20ec9bc306ec0bed85ec37e0d9db9d414c81701d272c6310e8287381f01cae26")
 
-def analyze_project_requirements(project_id):
-    """
-    Phân tích yêu cầu của dự án: chi phí, thời gian, nhân lực.
-    Nếu thiếu thông tin (chi phí, thời gian, nhân lực), gọi AI để gợi ý.
-    """
+def analyze_project_requirements(project_id, technologies):
+    
     project = Project.query.get(project_id)
     if not project:
         return {"error": "Project does not exist."}
+    tec_name = []
+    for tec_id in technologies:
+        technology = Technology.query.get(int(tec_id))
+        if technology:
+            tec_name.append(technology.name)
+    tec_name = ", ".join(tec_name)
 
     # Phân tích chi phí
     cost = project.projectcost
     if not cost:
-        cost = suggest_project_cost(project)
+        cost = suggest_project_cost(project,tec_name)
 
     # Phân tích thời gian
     duration = project.duration
     if not duration:
-        duration = suggest_project_duration(project)
+        duration = suggest_project_duration(project,tec_name)
 
     # Phân tích nhân lực
     roles = Role.query.all()
-    role_requirements = suggest_required_employees(project, roles)
+    role_requirements = suggest_required_employees(project, roles,tec_name)
        
 
     return {
@@ -38,13 +41,14 @@ def analyze_project_requirements(project_id):
         "role_requirements": role_requirements,
     }
 
-def suggest_project_cost(project):
+def suggest_project_cost(project,technologies):
     """
     Gọi AI để gợi ý chi phí cho dự án.
     """
     prompt = f"""
     Dự án: {project.name}
     Mô tả: {project.description}
+    Các công nghệ: {technologies}
     Hãy gợi ý chi phí phù hợp cho dự án này.
     """
     headers = {
@@ -61,13 +65,14 @@ def suggest_project_cost(project):
     response = call_api(headers, data)
     return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
 
-def suggest_project_duration(project):
+def suggest_project_duration(project,technologies):
     """
     Gọi AI để gợi ý thời gian hoàn thành cho dự án.
     """
     prompt = f"""
     Dự án: {project.name}
     Mô tả: {project.description}
+    Các công nghệ: {technologies}
     Hãy gợi ý thời gian hoàn thành (tính bằng ngày) cho dự án này.
     """
     headers = {
@@ -85,7 +90,7 @@ def suggest_project_duration(project):
     return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
 
 
-def suggest_required_employees(project, roles, max_retries=3):
+def suggest_required_employees(project, roles, technologies, max_retries=3):
     """
     Gọi AI để gợi ý số lượng nhân lực cần thiết cho tất cả các vai trò trong danh sách roles của dự án.
     Nếu dữ liệu trả về không hợp lệ, thử gọi lại API tối đa max_retries lần.
@@ -94,6 +99,7 @@ def suggest_required_employees(project, roles, max_retries=3):
     prompt = f"""
     Dự án: {project.name}
     Mô tả: {project.description}
+    Các công nghệ: {technologies}
     Các vai trò cần thiết:
     {roles_prompt}
     Hãy gợi ý số lượng nhân lực cần thiết cho từng vai trò trong dự án,

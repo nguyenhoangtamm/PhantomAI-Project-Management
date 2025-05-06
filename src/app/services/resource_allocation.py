@@ -18,11 +18,7 @@ def allocate_resources(project_analysis):
 
     # # Tạo prompt cho AI
     prompt = f"""
-    Dự án: {project_analysis['description']}
-    Chi phí: {project_analysis['cost']}
-    Thời gian: {project_analysis['duration']}
-    Vai trò yêu cầu: {project_analysis['role_requirements']}
-    Nhân viên có sẵn: {employee_list}
+    Dự án: {project_analysis}
     Hãy phân bổ nhân lực cho dự án này.
     Đưa ra lý do cho mỗi sự phân bổ.
     Định dạng JSON.

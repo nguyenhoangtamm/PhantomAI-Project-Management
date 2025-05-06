@@ -129,7 +129,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <!-- <div class="form-group">
+                <div class="form-group">
                     <label for="technology">Chọn công nghệ</label>
                     <select id="technology" name="technology" required>
                         {% for tech in technologies %}
@@ -138,7 +138,31 @@
                         </option>
                         {% endfor %}
                     </select>
-                </div> -->
+                    <button type="button" id="saveTechBtn">Lưu công nghệ</button>
+                </div>
+                <div id="selectedTechnologies" class="form-group">
+                    <label>Công nghệ đã chọn:</label>
+                    <ul id="techList"></ul>
+                </div>
+                <script>
+                    const saveTechBtn = document.getElementById("saveTechBtn");
+                    const techSelect = document.getElementById("technology");
+                    const techList = document.getElementById("techList");
+
+                    saveTechBtn.addEventListener("click", () => {
+                        const selectedOption = techSelect.options[techSelect.selectedIndex];
+                        const techId = selectedOption.value;
+                        const techName = selectedOption.text;
+
+                        // Kiểm tra nếu công nghệ đã được thêm
+                        if (![...techList.children].some(li => li.dataset.id === techId)) {
+                            const li = document.createElement("li");
+                            li.dataset.id = techId;
+                            li.textContent = techName;
+                            techList.appendChild(li);
+                        }
+                    });
+                </script>
 
                 <button type="submit" id="submitBtn">
                     Phân bổ nguồn lực
@@ -152,45 +176,51 @@
         </form>
 
         <script>
-            document
-                .getElementById("form")
-                .addEventListener("submit", async function (e) {
-                    e.preventDefault();
+            document.getElementById("form").addEventListener("submit", async function (e) {
+                e.preventDefault();
         
-                    const formData = new FormData(this);
-                    const data = Object.fromEntries(formData.entries());
+                const formData = new FormData(this);
         
-                    const res = await fetch("/suggest", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                        },
-                        body: new URLSearchParams(data),
-                    });
+                // Thu thập danh sách các ID công nghệ đã chọn
+                const techList = document.getElementById("techList");
+                const selectedTechIds = [...techList.children].map(li => li.dataset.id);
         
-                    const json = await res.json();
-                    const resultsDiv = document.getElementById("results");
-                    const outputDiv = document.getElementById("output");
+                // Thêm danh sách ID công nghệ vào formData
+                formData.append("selectedTechnologies", JSON.stringify(selectedTechIds));
         
-                    // Hiển thị kết quả
-                    resultsDiv.style.display = "block";
-                    outputDiv.innerHTML = ""; // Xóa nội dung cũ
+                const data = Object.fromEntries(formData.entries());
         
-                    if (json.result && json.result.length > 0) {
-                        json.result.forEach((item) => {
-                            const div = document.createElement("div");
-                            div.className = "role-block";
-                            div.innerHTML = `
-                                <h3>Nhiệm vụ ID: ${item.task_id}</h3>
-                                <p><strong>Nhân viên ID:</strong> ${item.employee_id}</p>
-                                <p><strong>Lý do:</strong> ${item.reason}</p>
-                            `;
-                            outputDiv.appendChild(div);
-                        });
-                    } else {
-                        outputDiv.innerHTML = "<p>Không có kết quả phân bổ.</p>";
-                    }
+                const res = await fetch("/suggest", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams(data),
                 });
+        
+                const json = await res.json();
+                const resultsDiv = document.getElementById("results");
+                const outputDiv = document.getElementById("output");
+        
+                // Hiển thị kết quả
+                resultsDiv.style.display = "block";
+                outputDiv.innerHTML = ""; // Xóa nội dung cũ
+        
+                if (json.result && json.result.length > 0) {
+                    json.result.forEach((item) => {
+                        const div = document.createElement("div");
+                        div.className = "role-block";
+                        div.innerHTML = `
+                            <h3>Nhiệm vụ ID: ${item.task_id}</h3>
+                            <p><strong>Nhân viên ID:</strong> ${item.employee_id}</p>
+                            <p><strong>Lý do:</strong> ${item.reason}</p>
+                        `;
+                        outputDiv.appendChild(div);
+                    });
+                } else {
+                    outputDiv.innerHTML = "<p>Không có kết quả phân bổ.</p>";
+                }
+            });
         </script>
     </body>
 </html>
