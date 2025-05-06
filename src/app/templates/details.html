@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết dự án</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 40px;
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .btn-back {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Chi tiết dự án</h2>
+        <div class="card shadow-sm bg-white">
+            <h4>{{ project.name }}</h4>
+            <p><strong>Mã dự án:</strong> {{ project.id }}</p>
+            <p><strong>Nội dung:</strong> {{ project.description }}</p>
+            <p><strong>Ngày bắt đầu:</strong> {{ project.startdate.strftime('%Y-%m-%d') }}</p>
+            <p><strong>Ngày kết thúc:</strong> {{ project.enddate.strftime('%Y-%m-%d') if project.enddate else 'Chưa xác
+                định' }}</p>
+            <p><strong>Thời gian hoàn thành:</strong> {{ project.duration }}</p>
+            <p><strong>Trạng thái:</strong> {{ project.status }}</p>
+            <p><strong>Chi phí:</strong> {{ project.projectcost }} VND</p>
+        </div>
+        <a href="{{ url_for('main.home') }}" class="btn btn-secondary btn-back">← Quay lại</a>
+        <a href="{{ url_for('main.ai') }}" class="btn btn-secondary btn-back">Phân bổ</a>
+    </div>
+</body>
+
+</html>

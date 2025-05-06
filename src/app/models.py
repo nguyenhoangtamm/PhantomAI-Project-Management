@@ -29,15 +29,6 @@ class Role(db.Model):
     name = db.Column(db.String(100), nullable=False)
 
 
-class EmployeeAssignment(db.Model):
-    __tablename__ = 'employee_assignment'
-    id = db.Column(db.Integer, primary_key=True)
-    employeeid = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
-    roleid = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
-    hoursworked = db.Column(db.Integer, nullable=False)
-    hourlyrate = db.Column(db.Numeric(10, 2), nullable=False)
-
-
 class Skill(db.Model):
     __tablename__ = 'skill'
     id = db.Column(db.Integer, primary_key=True)
@@ -50,3 +41,25 @@ class EmployeeSkill(db.Model):
     skillid = db.Column(db.Integer, db.ForeignKey('skill.id'), primary_key=True)
     proficiencylevel = db.Column(db.String(50), nullable=False)
     yearsofexperience = db.Column(db.Integer, nullable=False)
+
+
+class EmployeeProject(db.Model):
+    __tablename__ = 'employee_project'
+    employeeid = db.Column(db.Integer, db.ForeignKey('employee.id'), primary_key=True)
+    projectid = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    roleid = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
+    startdate = db.Column(db.Date, nullable=False)
+    enddate = db.Column(db.Date, nullable=True)
+    salary = db.Column(db.Numeric(15, 2), nullable=False)
+
+
+class Technology(db.Model):
+    __tablename__ = 'technology'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+
+
+class ProjectTechnology(db.Model):
+    __tablename__ = 'project_technology'
+    projectid = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    technologyid = db.Column(db.Integer, db.ForeignKey('technology.id'), primary_key=True)

@@ -1,0 +1,183 @@
+from app.models import Project, Role
+from app.services.utils import call_api
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+together_api_key = os.getenv("TOGETHER_API_KEY", "20ec9bc306ec0bed85ec37e0d9db9d414c81701d272c6310e8287381f01cae26")
+
+def analyze_project_requirements(project_id):
+    """
+    Phân tích yêu cầu của dự án: chi phí, thời gian, nhân lực.
+    Nếu thiếu thông tin (chi phí, thời gian, nhân lực), gọi AI để gợi ý.
+    """
+    project = Project.query.get(project_id)
+    if not project:
+        return {"error": "Project does not exist."}
+
+    # Phân tích chi phí
+    cost = project.projectcost
+    if not cost:
+        cost = suggest_project_cost(project)
+
+    # Phân tích thời gian
+    duration = project.duration
+    if not duration:
+        duration = suggest_project_duration(project)
+
+    # Phân tích nhân lực
+    roles = Role.query.all()
+    role_requirements = suggest_required_employees(project, roles)
+       
+
+    return {
+        "project_name": project.name,
+        "description": project.description,
+        "cost": cost,
+        "duration": duration,
+        "role_requirements": role_requirements,
+    }
+
+def suggest_project_cost(project):
+    """
+    Gọi AI để gợi ý chi phí cho dự án.
+    """
+    prompt = f"""
+    Dự án: {project.name}
+    Mô tả: {project.description}
+    Hãy gợi ý chi phí phù hợp cho dự án này.
+    """
+    headers = {
+        "Authorization": f"Bearer {together_api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "mistralai/Mistral-7B-Instruct-v0.2",
+        "prompt": prompt,
+        "max_tokens": 100,
+        "temperature": 0.7,
+        "top_p": 0.85,
+    }
+    response = call_api(headers, data)
+    return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
+
+def suggest_project_duration(project):
+    """
+    Gọi AI để gợi ý thời gian hoàn thành cho dự án.
+    """
+    prompt = f"""
+    Dự án: {project.name}
+    Mô tả: {project.description}
+    Hãy gợi ý thời gian hoàn thành (tính bằng ngày) cho dự án này.
+    """
+    headers = {
+        "Authorization": f"Bearer {together_api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "mistralai/Mistral-7B-Instruct-v0.2",
+        "prompt": prompt,
+        "max_tokens": 100,
+        "temperature": 0.7,
+        "top_p": 0.85,
+    }
+    response = call_api(headers, data)
+    return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
+
+
+def suggest_required_employees(project, roles, max_retries=3):
+    """
+    Gọi AI để gợi ý số lượng nhân lực cần thiết cho tất cả các vai trò trong danh sách roles của dự án.
+    Nếu dữ liệu trả về không hợp lệ, thử gọi lại API tối đa max_retries lần.
+    """
+    roles_prompt = "\n".join([f"- Vai trò: {role.name}" for role in roles])
+    prompt = f"""
+    Dự án: {project.name}
+    Mô tả: {project.description}
+    Các vai trò cần thiết:
+    {roles_prompt}
+    Hãy gợi ý số lượng nhân lực cần thiết cho từng vai trò trong dự án,
+    Trả về danh sách số lượng nhân lực dưới dạng JSON như sau:
+    [
+        {{ "role_id": 1, "role_name": "Developer", "suggested_count": 3 }},
+        {{ "role_id": 2, "role_name": "Designer", "suggested_count": 2 }}
+    ]
+    Chỉ cần trả những thứ yêu cầu không cần mô tả và giải thích.
+    """
+    headers = {
+        "Authorization": f"Bearer {together_api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "mistralai/Mistral-7B-Instruct-v0.2",
+        "prompt": prompt,
+        "max_tokens": 2000,
+        "temperature": 0.7,
+        "top_p": 0.85,
+    }
+
+    for attempt in range(max_retries):
+        try:
+            response = call_api(headers, data)
+            suggestions = response.get("choices", [{}])[0].get("text", "").strip()
+            # print(f"Attempt {attempt + 1}: {suggestions}")  # In ra phản hồi để kiểm tra
+
+            # Tìm giá trị trong cặp []
+            start_idx = suggestions.find("[")
+            end_idx = suggestions.find("]", start_idx) + 1
+            if start_idx != -1 and end_idx != -1:
+                employee_counts_str = suggestions[start_idx:end_idx]
+                # Chuyển đổi chuỗi JSON thành danh sách Python
+                import json
+                employee_counts = json.loads(employee_counts_str)
+            else:
+                raise ValueError("No valid list found in response")
+            
+            # Kiểm tra định dạng của từng phần tử trong danh sách
+            if not isinstance(employee_counts, list):
+                raise ValueError("Invalid response format: Not a list")
+            for item in employee_counts:
+                if not isinstance(item, dict) or "role_id" not in item or "role_name" not in item or "suggested_count" not in item:
+                    raise ValueError("Invalid response format: Missing required keys")
+            
+            # Nếu dữ liệu hợp lệ, trả về kết quả
+            role_requirements = []
+            for role in roles:
+                # Tìm vai trò tương ứng trong phản hồi
+                matching_role = next((item for item in employee_counts if item["role_id"] == role.id), None)
+                if matching_role:
+                    role_requirements.append({
+                        "role_id": role.id,
+                        "role_name": role.name,
+                        "suggested_count": matching_role["suggested_count"]
+                    })
+                else:
+
+                    role_requirements.append({
+                        "role_id": role.id,
+                        "role_name": role.name,
+                        "suggested_count": "Không xác định"
+                    })
+            return role_requirements
+
+        except Exception as e:
+            print(f"Error on attempt {attempt + 1}: {e}")
+            if attempt == max_retries - 1:
+                # Nếu hết số lần thử, trả về danh sách mặc định
+                print("Max retries reached. Returning default values.")
+                return [{"role_id": role.id, "role_name": role.name, "suggested_count": "Không xác định"} for role in roles]
+
+    # Trường hợp không có phản hồi hợp lệ sau tất cả các lần thử
+    return [{"role_id": role.id, "role_name": role.name, "suggested_count": "Không xác định"} for role in roles]
+
+
+
+
+
+
+
+
+
+
+
+
