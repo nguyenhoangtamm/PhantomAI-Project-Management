@@ -3,6 +3,7 @@ from app.services.utils import call_api
 import os
 from dotenv import load_dotenv
 import re
+import json
 
 load_dotenv()
 together_api_key = os.getenv("TOGETHER_API_KEY", "20ec9bc306ec0bed85ec37e0d9db9d414c81701d272c6310e8287381f01cae26")
@@ -21,10 +22,6 @@ def analyze_project_requirements(project_id, technologies):
 
     # Phân tích chi phí
     response = suggest_project_cost_duration(project,tec_name)
-    print("Response:", response)
-    json_response = re.findall(r'\{.*?\}', response)
-    print("JSON Response:", json_response)
-    # Phân tích nhân lực
     roles = Role.query.all()
     role_requirements = suggest_required_employees(project, roles,tec_name)
        
@@ -32,8 +29,8 @@ def analyze_project_requirements(project_id, technologies):
     return {
         "project_name": project.name,
         "description": project.description,
-        "cost": response,
-        "duration": response,
+        "cost": response.get("development_cost"),
+        "duration": response.get("time_estimate"),
         "role_requirements": role_requirements,
     }
 
@@ -42,15 +39,16 @@ def suggest_project_cost_duration(project,technologies):
     Gọi AI để gợi ý chi phí cho dự án.
     """
     prompt = f"""
-Dự án: {project.name}
-Mô tả: {project.description}
-Các công nghệ: {technologies}
-Trả về JSON với định dạng sau:
+Project: {project.name}
+Description: {project.description}
+Technologies: {technologies}
+Return a JSON in the following format:
 {{
-    "time_estimate": <thời gian thực hiện (tính bằng tháng)>,
-    "development_cost": <chi phí phát triển (tính bằng VNĐ)>
+    "time_estimate": <time required (in months)>,
+    "development_cost": <development cost (in VND)>
 }}
-Chỉ trả về JSON. Không trả về bất kỳ văn bản nào khác.
+Do not include any units or additional text, only integers.
+Only return the JSON. Do not include any other text.
 """
     headers = {
         "Authorization": f"Bearer {together_api_key}",
@@ -63,8 +61,30 @@ Chỉ trả về JSON. Không trả về bất kỳ văn bản nào khác.
         "temperature": 0.7,
         "top_p": 0.85,
     }
-    response = call_api(headers, data)
-    return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
+    max_retries = 10
+    result = None
+    for attempt in range(max_retries):
+        response = call_api(headers, data)
+        # Tìm giá trị trong cặp {}
+        detec= response.get("choices", [{}])[0].get("text", "Không xác định").strip()
+        json_response = re.findall(r'\{[^}]*\}', detec)
+
+        if json_response:
+            json_object = json.loads(json_response[0])  # Convert the first match to a JSON object
+            print(f"JSON Object: {json_object}")
+            # Kiểm tra xem các trường có kiểu dữ liệu hợp lệ không
+            if "time_estimate" in json_object and "development_cost" in json_object:
+                if isinstance(json_object["time_estimate"], int) and isinstance(json_object["development_cost"], int):
+                    # Nếu kiểu dữ liệu hợp lệ, trả về kết quả
+                    if json_object["time_estimate"] > 0 and json_object["development_cost"] > 0:
+                        result = {
+                            "time_estimate": json_object["time_estimate"],
+                            "development_cost": json_object["development_cost"]
+                        }
+                        break
+    print("result:", result)    
+    return result
+
 
 
 

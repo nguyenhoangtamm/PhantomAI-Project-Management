@@ -219,26 +219,65 @@
                         <h3>Tên dự án: ${json.project_name}</h3>
                         <p><strong>Chi phí:</strong> ${json.cost}</p>
                         <p><strong>Thời gian thực hiện:</strong> ${json.duration} tháng</p>
-                        <h4>Yêu cầu vai trò:</h4>
                     `;
+                        // Thêm nút xác nhận và hủy bỏ
+                        const confirmButton = document.createElement("button");
+                        confirmButton.textContent = "Xác nhận";
+                        confirmButton.style.marginRight = "10px";
+                        confirmButton.style.padding = "10px 20px";
+                        confirmButton.style.backgroundColor = "#27ae60";
+                        confirmButton.style.color = "white";
+                        confirmButton.style.border = "none";
+                        confirmButton.style.borderRadius = "5px";
+                        confirmButton.style.cursor = "pointer";
 
-                        // Hiển thị yêu cầu vai trò
-                        if (
-                            json.role_requirements &&
-                            json.role_requirements.length > 0
-                        ) {
-                            json.role_requirements.forEach((role) => {
-                                outputDiv.innerHTML += `
-                                <div class="role-block">
-                                    <h3>Vai trò: ${role.role_name}</h3>
-                                    <p><strong>Số lượng đề xuất:</strong> ${role.suggested_count}</p>
-                                </div>
-                            `;
+                        // Thêm sự kiện cho nút xác nhận
+                        confirmButton.addEventListener("click", async () => {
+                            const allocationData = {
+                                project_id: "{{ project.id }}",
+                                technologies: JSON.parse(formData.get("selectedTechnologies")),
+                                project_cost: json.cost,
+                                project_duration: json.duration,
+                            };
+
+                            const response = await fetch("/add-allocation-project", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(allocationData),
                             });
-                        } else {
-                            outputDiv.innerHTML +=
-                                "<p>Không có yêu cầu vai trò.</p>";
-                        }
+
+                            if (response.ok) {
+                                alert("Kết quả phân bổ đã được gửi thành công!");
+                            } else {
+                                alert("Đã xảy ra lỗi khi gửi kết quả phân bổ.");
+                            }
+                        });
+
+                        const cancelButton = document.createElement("button");
+                        cancelButton.textContent = "Hủy bỏ";
+                        cancelButton.style.padding = "10px 20px";
+                        cancelButton.style.backgroundColor = "#e74c3c";
+                        cancelButton.style.color = "white";
+                        cancelButton.style.border = "none";
+                        cancelButton.style.borderRadius = "5px";
+                        cancelButton.style.cursor = "pointer";
+
+                        // Thêm sự kiện cho nút
+                        confirmButton.addEventListener("click", () => {
+                            resultsDiv.style.display = "none";
+                            outputDiv.innerHTML = "";
+                        });
+
+                        cancelButton.addEventListener("click", () => {
+                            resultsDiv.style.display = "none";
+                            outputDiv.innerHTML = "";
+                        });
+
+                        // Thêm nút vào giao diện
+                        outputDiv.appendChild(confirmButton);
+                        outputDiv.appendChild(cancelButton);
                     } else {
                         outputDiv.innerHTML =
                             "<p>Không có kết quả phân bổ.</p>";

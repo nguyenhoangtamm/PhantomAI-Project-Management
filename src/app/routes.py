@@ -15,32 +15,6 @@ def home():
     employees = Employee.query.all()
     return render_template("index.html", employees=employees)
 
-
-@main.route("/suggest", methods=["POST"])
-def phantomai():
-    load_dotenv()
-
-    # Phân tích yêu cầu dự án
-    project_id = request.form.get("project_id")
-    technologies = request.form.get("selectedTechnologies")
-    technologies = technologies.strip("[]").replace('"', '').split(",") if technologies else []
-    project_analysis = analyze_project_requirements(project_id, technologies)
-    # print("Project Analysis:", project_analysis)
-    project_name = project_analysis.get("project_name")
-    description = project_analysis.get("description")
-    cost = project_analysis.get("cost")
-    duration = project_analysis.get("duration")
-    role_requirements = project_analysis.get("role_requirements", [])
-    # for role in role_requirements:
-    #     role_id = role.get("roleid")
-    #     if role_id:
-    #         role_obj = Role.query.get(role_id)
-    #         if role_obj:
-    #             role["rolename"] = role_obj.name
-    return project_analysis
-    # return jsonify(project_analysis), 200
-
-#@main.route("/employee")
 @main.route("/employee")
 def list_employees():
     employees = Employee.query.all()
@@ -245,3 +219,50 @@ def allocation_project(project_id):
     technologies = Technology.query.all()
 
     return render_template("allocation/allocation_project.html", project=project, technologies=technologies)
+
+
+
+## phan bo
+
+@main.route("/suggest", methods=["POST"])
+def phantomai():
+    load_dotenv()
+    # Phân tích yêu cầu dự án
+    project_id = request.form.get("project_id")
+    technologies = request.form.get("selectedTechnologies")
+    technologies = technologies.strip("[]").replace('"', '').split(",") if technologies else []
+    project_analysis = analyze_project_requirements(project_id, technologies)
+    return project_analysis
+   
+@main.route("/add-allocation-project", methods=["POST"])
+def add_allocation_project():
+    """
+    Thêm phân bổ nhân lực cho dự án.
+    """
+    try:
+        data = request.get_json()  # Lấy dữ liệu JSON từ request
+
+        project_id = data.get("project_id")
+        technology_ids = data.get("technologies", [])
+        project_cost = data.get("project_cost")
+        project_duration = data.get("project_duration")
+
+        # Update project details with cost and duration
+        project = Project.query.get_or_404(project_id)
+        project.projectcost = project_cost
+        project.duration = project_duration
+        db.session.commit()
+        # xoá tất cả các công nghệ cũ liên quan đến dự án
+        ProjectTechnology.query.filter_by(projectid=project_id).delete()
+        for technology_id in technology_ids:
+            project_technology = ProjectTechnology(
+                projectid=project_id,
+                technologyid=technology_id
+            )
+            db.session.add(project_technology)
+        
+        db.session.commit()
+        
+        return redirect(url_for("main.project_details", project_id=project_id))
+    except Exception as e:
+        return f"Đã xảy ra lỗi: {str(e)}", 500
