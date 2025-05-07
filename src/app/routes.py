@@ -5,6 +5,7 @@ from flask import Blueprint, render_template, request, jsonify
 from app.services.project_analysis import analyze_project_requirements
 from app.services.resource_allocation import allocate_resources
 import os
+from datetime import datetime as Datetime
 from dotenv import load_dotenv
 main = Blueprint("main", __name__)
 
@@ -14,29 +15,29 @@ def home():
     employees = Employee.query.all()
     return render_template("index.html", employees=employees)
 
-@main.route("/ai")
-def ai():
-    projects = Project.query.all()
-    technologies = Technology.query.all()
-    return render_template("ai.html", projects=projects, technologies=technologies)
+
 @main.route("/suggest", methods=["POST"])
 def phantomai():
     load_dotenv()
 
     # Phân tích yêu cầu dự án
-    project_id = request.form.get("project")
+    project_id = request.form.get("project_id")
     technologies = request.form.get("selectedTechnologies")
     technologies = technologies.strip("[]").replace('"', '').split(",") if technologies else []
     project_analysis = analyze_project_requirements(project_id, technologies)
-    print("Project Analysis:", project_analysis)
+    # print("Project Analysis:", project_analysis)
+    project_name = project_analysis.get("project_name")
+    description = project_analysis.get("description")
+    cost = project_analysis.get("cost")
+    duration = project_analysis.get("duration")
     role_requirements = project_analysis.get("role_requirements", [])
-    for role in role_requirements:
-        role_id = role.get("roleid")
-        if role_id:
-            role_obj = Role.query.get(role_id)
-            if role_obj:
-                role["rolename"] = role_obj.name
-    return allocate_resources(project_analysis)
+    # for role in role_requirements:
+    #     role_id = role.get("roleid")
+    #     if role_id:
+    #         role_obj = Role.query.get(role_id)
+    #         if role_obj:
+    #             role["rolename"] = role_obj.name
+    return project_analysis
     # return jsonify(project_analysis), 200
 
 #@main.route("/employee")
@@ -112,13 +113,25 @@ def add_project():
     Thêm một dự án mới.
     """
     try:
+
         name = request.form.get("name")
         description = request.form.get("description")
-        startdate = request.form.get("startdate")
+        if request.form.get("startdate"):
+            startdate = request.form.get("startdate")
+        else:
+            startdate = Datetime.now().date()
         enddate = request.form.get("enddate")
-        duration = request.form.get("duration")
+        
+        if request.form.get("duration"):
+            duration = request.form.get("duration")
+        else:
+            duration = 0
         status = request.form.get("status")
-        projectcost = request.form.get("projectcost")
+        if  request.form.get("projectcost"):
+            projectcost = request.form.get("projectcost")
+        else:
+            projectcost = 0
+
 
         # Tạo đối tượng Project mới
         new_project = Project(
@@ -194,3 +207,12 @@ def delete_project(id):
     except Exception as e:
         return f"Lỗi khi xóa: {str(e)}", 500
 
+@main.route("/project/allocation_project/<int:project_id>")
+def allocation_project(project_id):
+    """
+    Hiển thị chi tiết phân bổ nhân lực cho dự án.
+    """
+    project = Project.query.get_or_404(project_id)
+    technologies = Technology.query.all()
+
+    return render_template("allocation/allocation_project.html", project=project, technologies=technologies)

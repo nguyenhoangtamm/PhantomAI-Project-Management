@@ -18,7 +18,7 @@ class Project(db.Model):
     description = db.Column(db.Text, nullable=True)
     startdate = db.Column(db.Date, nullable=False)
     enddate = db.Column(db.Date, nullable=True)
-    duration = db.Column(db.String(50), nullable=True)
+    duration = db.Column(db.Integer, nullable=True)
     status = db.Column(db.String(50), nullable=False)
     projectcost = db.Column(db.Numeric(15, 2), nullable=False)
 

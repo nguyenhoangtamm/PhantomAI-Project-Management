@@ -196,7 +196,7 @@
                     </div>
                     <div class="col-md-4">
                         <label for="startdate" class="form-label">Ngày bắt đầu</label>
-                        <input type="date" class="form-control" name="startdate" required>
+                        <input type="date" class="form-control" name="startdate" >
                     </div>
                     <div class="col-md-4">
                         <label for="enddate" class="form-label">Ngày kết thúc</label>
@@ -204,7 +204,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Thời gian hoàn thành</label>
-                        <input type="text" class="form-control" name="duration" value="{% if project is defined %}{{ project.duration }} {{ project.duration_unit }}{% endif %}" required>
+                        <input type="text" class="form-control" name="duration" value="{% if project is defined %}{{ project.duration }} {{ project.duration_unit }}{% endif %}">
                     </div>
                     <div class="col-md-6">
                         <label for="status" class="form-label">Trạng thái</label>

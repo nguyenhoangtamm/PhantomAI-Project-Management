@@ -2,6 +2,7 @@ from app.models import Project, Role,Technology
 from app.services.utils import call_api
 import os
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 together_api_key = os.getenv("TOGETHER_API_KEY", "20ec9bc306ec0bed85ec37e0d9db9d414c81701d272c6310e8287381f01cae26")
@@ -19,15 +20,9 @@ def analyze_project_requirements(project_id, technologies):
     tec_name = ", ".join(tec_name)
 
     # Phân tích chi phí
-    cost = project.projectcost
-    if not cost:
-        cost = suggest_project_cost(project,tec_name)
-
-    # Phân tích thời gian
-    duration = project.duration
-    if not duration:
-        duration = suggest_project_duration(project,tec_name)
-
+    response = suggest_project_cost_duration(project,tec_name)
+    json_response = re.findall(r'\{.*?\}', response)
+    print("JSON Response:", json_response)
     # Phân tích nhân lực
     roles = Role.query.all()
     role_requirements = suggest_required_employees(project, roles,tec_name)
@@ -36,45 +31,26 @@ def analyze_project_requirements(project_id, technologies):
     return {
         "project_name": project.name,
         "description": project.description,
-        "cost": cost,
-        "duration": duration,
+        "cost": response,
+        "duration": response,
         "role_requirements": role_requirements,
     }
 
-def suggest_project_cost(project,technologies):
+def suggest_project_cost_duration(project,technologies):
     """
     Gọi AI để gợi ý chi phí cho dự án.
     """
     prompt = f"""
-    Dự án: {project.name}
-    Mô tả: {project.description}
-    Các công nghệ: {technologies}
-    Hãy gợi ý chi phí phù hợp cho dự án này.
-    """
-    headers = {
-        "Authorization": f"Bearer {together_api_key}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "mistralai/Mistral-7B-Instruct-v0.2",
-        "prompt": prompt,
-        "max_tokens": 100,
-        "temperature": 0.7,
-        "top_p": 0.85,
-    }
-    response = call_api(headers, data)
-    return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
-
-def suggest_project_duration(project,technologies):
-    """
-    Gọi AI để gợi ý thời gian hoàn thành cho dự án.
-    """
-    prompt = f"""
-    Dự án: {project.name}
-    Mô tả: {project.description}
-    Các công nghệ: {technologies}
-    Hãy gợi ý thời gian hoàn thành (tính bằng ngày) cho dự án này.
-    """
+Dự án: {project.name}
+Mô tả: {project.description}
+Các công nghệ: {technologies}
+Trả về JSON với định dạng sau:
+{{
+    "time_estimate": <thời gian thực hiện (tính bằng tháng)>,
+    "development_cost": <chi phí phát triển (tính bằng VNĐ)>
+}}
+Chỉ trả về JSON. Không trả về bất kỳ văn bản nào khác.
+"""
     headers = {
         "Authorization": f"Bearer {together_api_key}",
         "Content-Type": "application/json"
@@ -90,7 +66,8 @@ def suggest_project_duration(project,technologies):
     return response.get("choices", [{}])[0].get("text", "Không xác định").strip()
 
 
-def suggest_required_employees(project, roles, technologies, max_retries=3):
+
+def suggest_required_employees(project, roles, technologies, max_retries=10):
     """
     Gọi AI để gợi ý số lượng nhân lực cần thiết cho tất cả các vai trò trong danh sách roles của dự án.
     Nếu dữ liệu trả về không hợp lệ, thử gọi lại API tối đa max_retries lần.
