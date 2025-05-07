@@ -21,6 +21,7 @@ def analyze_project_requirements(project_id, technologies):
 
     # Phân tích chi phí
     response = suggest_project_cost_duration(project,tec_name)
+    print("Response:", response)
     json_response = re.findall(r'\{.*?\}', response)
     print("JSON Response:", json_response)
     # Phân tích nhân lực

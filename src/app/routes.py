@@ -44,7 +44,7 @@ def phantomai():
 @main.route("/employee")
 def list_employees():
     employees = Employee.query.all()
-    return render_template("index.html", employees=employees)
+    return render_template("employee/employee.html", employees=employees)
 
 
 @main.route("/employee/add", methods=["POST"])
@@ -52,50 +52,79 @@ def add_employee():
     try:
         fullname = request.form.get("fullname")
         position = request.form.get("position")
+        dateofbirth = request.form.get("dateofbirth")
+        gender = request.form.get("gender")
+        email = request.form.get("email")
+        phonenumber = request.form.get("phonenumber")
+
+        if not dateofbirth or not gender or not email or not phonenumber:
+            return jsonify({"error": "Date of birth, gender, email, and phone number are required."}), 400
         if not fullname or not position:
             return jsonify({"error": "Fullname and position are required."}), 400
 
-        new_employee = Employee(fullname=fullname, position=position)
+        new_employee = Employee(
+                fullname=fullname,
+                position=position,
+                dateofbirth=dateofbirth,
+                gender=gender,
+                email=email,
+                phonenumber=phonenumber
+            )
         db.session.add(new_employee)
         db.session.commit()
-        return jsonify({"message": "Employee added successfully."}), 201
+        return redirect(url_for("main.list_employees"))
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+@main.route('/employee/edit/<int:id>')
+def edit_employee(id):
+    """
+    Hiển thị giao diện chỉnh sửa dự án.
+    """
+    employee = Employee.query.get_or_404(id)
+    return render_template('employee/edit_employee.html', employee=employee)
 
-@main.route("/employee/update/<int:employee_id>", methods=["PUT"])
+
+
+@main.route("/employee/update/<int:employee_id>", methods=["POST"])
 def update_employee(employee_id):
     try:
-        employee = Employee.query.get(employee_id)
-        if not employee:
-            return jsonify({"error": "Employee not found."}), 404
+        employee = Employee.query.get_or_404(employee_id)
 
         fullname = request.form.get("fullname")
         position = request.form.get("position")
-        if fullname:
-            employee.fullname = fullname
-        if position:
-            employee.position = position
+        dateofbirth = request.form.get("dateofbirth")
+        gender = request.form.get("gender")
+        email = request.form.get("email")
+        phonenumber = request.form.get("phonenumber")
+
+        if not dateofbirth or not gender or not email or not phonenumber:
+            return jsonify({"error": "Date of birth, gender, email, and phone number are required."}), 400
+        if not fullname or not position:
+            return jsonify({"error": "Fullname and position are required."}), 400
+
+        employee.fullname = fullname
+        employee.position = position
+        employee.dateofbirth = dateofbirth
+        employee.gender = gender
+        employee.email = email
+        employee.phonenumber = phonenumber
 
         db.session.commit()
-        return jsonify({"message": "Employee updated successfully."}), 200
+        return redirect(url_for("main.list_employees"))
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
-@main.route("/employee/delete/<int:employee_id>", methods=["DELETE"])
+@main.route("/employee/delete/<int:employee_id>", methods=["POST"])
 def delete_employee(employee_id):
     try:
-        employee = Employee.query.get(employee_id)
-        if not employee:
-            return jsonify({"error": "Employee not found."}), 404
-
+        employee = Employee.query.get_or_404(employee_id)
         db.session.delete(employee)
         db.session.commit()
-        return jsonify({"message": "Employee deleted successfully."}), 200
+        return redirect(url_for("main.list_employees"))
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
 
 ## project
 @main.route("/project")

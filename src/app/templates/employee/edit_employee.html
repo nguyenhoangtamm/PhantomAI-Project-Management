@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cập nhật nhân viên</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7f8;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            background: #fff;
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Chỉnh sửa thông tin nhân viên</h2>
+        <form action="{{ url_for('main.update_employee', employee_id=employee.id) }}" method="POST">
+            <form action="{{ url_for('main.update_employee', employee_id=employee.id) }}" method="POST">
+                <label>Họ tên:</label>
+                <input type="text" name="fullname" value="{{ employee.fullname }}" required>
+    
+                <label>Ngày sinh:</label>
+                <input type="date" name="dateofbirth" value="{{ employee.dateofbirth }}" required>
+    
+                <label>Giới tính:</label>
+                <select name="gender" required>
+                    <option value="Nam" {% if employee.gender=="Nam" %}selected{% endif %}>Nam</option>
+                    <option value="Nữ" {% if employee.gender=="Nữ" %}selected{% endif %}>Nữ</option>
+                </select>
+    
+                <label>Email:</label>
+                <input type="email" name="email" value="{{ employee.email }}" required>
+    
+                <label>Số điện thoại:</label>
+                <input type="text" name="phonenumber" value="{{ employee.phonenumber }}" required>
+    
+                <label>Chức vụ:</label>
+                <input type="text" name="position" value="{{ employee.position }}" required>
+    
+                <button type="submit">Cập nhật</button>
+            </form>
+        </form>
+    </div>
+</body>
+
+</html>
