@@ -1,131 +1,95 @@
 <!DOCTYPE html>
 <html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Trang Chủ - Quản lý công việc</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
 
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý thành viên</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
+            .hero-section {
+                background: linear-gradient(
+                        rgba(0, 0, 0, 0.5),
+                        rgba(0, 0, 0, 0.6)
+                    ),
+                    url("https://images.unsplash.com/photo-1498050108023-c5249f4df085")
+                        center/cover no-repeat;
+                color: white;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+            .hero-section h1 {
+                font-size: 3.5rem;
+                font-weight: bold;
+            }
 
-        .btn-add {
-            background-color: #28a745;
-            color: white;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
+            .hero-section p {
+                font-size: 1.2rem;
+            }
 
-        .member-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
+            .btn-custom {
+                padding: 12px 30px;
+                font-size: 1rem;
+                border-radius: 30px;
+            }
 
-        .member-table th,
-        .member-table td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
+            footer {
+                background-color: #212529;
+                color: #ccc;
+            }
+        </style>
+    </head>
 
-        .tag {
-            display: inline-block;
-            background-color: #007bff;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-right: 5px;
-            font-size: 12px;
-        }
+    <body>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+            <div class="container">
+                <a class="navbar-brand" href="#">Quản Lý Công Việc</a>
+            </div>
+        </nav>
 
-        .status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            font-size: 13px;
-        }
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="container">
+                <h1>Chào mừng bạn!</h1>
+                <p class="mb-4">
+                    Nền tảng quản lý dự án và nhân viên chuyên nghiệp
+                </p>
+                <!-- Liên kết với url_for để chuyển đến các route trong Flask -->
+                <a
+                    href="{{ url_for('main.project') }}"
+                    class="btn btn-primary btn-custom me-3"
+                    >Xem Dự Án</a
+                >
+                <a
+                    href="{{ url_for('main.list_employees') }}"
+                    class="btn btn-outline-light btn-custom"
+                    >Xem Nhân Viên</a
+                >
+            </div>
+        </section>
 
-        .status.ranh {
-            background-color: #28a745;
-        }
+        <!-- Footer -->
+        <footer class="text-center py-4">
+            <div class="container">
+                <p class="mb-0">
+                    &copy; 2025 Hệ thống quản lý công việc. Được phát triển bởi
+                    bạn 😄
+                </p>
+            </div>
+        </footer>
 
-        .status.ban {
-            background-color: #ffc107;
-        }
-
-        .status.quata {
-            background-color: #dc3545;
-        }
-
-        .action-btn {
-            margin-right: 5px;
-            padding: 6px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-view {
-            background-color: #17a2b8;
-            color: white;
-        }
-
-        .btn-edit {
-            background-color: #007bff;
-            color: white;
-        }
-    </style>
-</head>
-
-<body>
-    <h1>Quản lý thành viên</h1>
-    <button class="btn-add">+ Thêm thành viên</button>
-
-    <table class="member-table">
-        <thead>
-            <tr>
-                <th>Mã NV</th>
-                <th>Họ tên</th>
-                <th>Ngày sinh</th>
-                <th>Giới tính</th>
-                <th>Email</th>
-                <th>SĐT</th>
-                <th>Chức vụ</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for employee in employees %}
-            <tr>
-                <td>{{ employee.id }}</td>
-                <td>{{ employee.fullname }}</td>
-                <td>{{ employee.dateofbirth }}</td>
-                <td>{{ employee.gender }}</td>
-                <td>{{ employee.email }}</td>
-                <td>{{ employee.phonenumber }}</td>
-                <td><span class="tag">{{ employee.position }}</span></td>
-                <td>
-                    <button class="action-btn btn-view">Xem</button>
-                    <button class="action-btn btn-edit">Sửa</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
 </html>
+ss
