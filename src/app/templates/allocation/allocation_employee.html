@@ -6,31 +6,46 @@
         <title>Employee Allocation</title>
         <style>
             body {
-                font-family: Arial, sans-serif;
+                font-family: "Roboto", Arial, sans-serif;
                 margin: 0;
                 padding: 0;
-                background-color: #f4f4f9;
+                background-color: #f9fafc;
                 color: #333;
+                line-height: 1.6;
             }
             header {
                 background-color: #4caf50;
                 color: white;
-                padding: 1rem;
+                padding: 1.5rem;
                 text-align: center;
+                font-size: 1.5rem;
+                font-weight: bold;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
             main {
                 padding: 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
             }
             section {
                 margin-bottom: 2rem;
                 background: white;
-                padding: 1.5rem;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                padding: 2rem;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            section:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             }
             h1,
             h2 {
                 color: #4caf50;
+                margin-bottom: 1rem;
+            }
+            p {
+                margin: 0.5rem 0;
             }
             form {
                 display: flex;
@@ -42,14 +57,17 @@
             }
             select,
             button {
-                padding: 0.5rem;
+                padding: 0.8rem;
                 border: 1px solid #ccc;
-                border-radius: 4px;
+                border-radius: 6px;
+                font-size: 1rem;
             }
             button {
                 background-color: #4caf50;
                 color: white;
                 cursor: pointer;
+                font-weight: bold;
+                transition: background-color 0.3s ease;
             }
             button:hover {
                 background-color: #45a049;
@@ -57,50 +75,56 @@
             table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-top: 1rem;
+                margin-top: 1.5rem;
+                font-size: 0.95rem;
             }
             th,
             td {
                 border: 1px solid #ddd;
-                padding: 0.8rem;
+                padding: 1rem;
                 text-align: left;
             }
             th {
                 background-color: #4caf50;
                 color: white;
+                font-weight: bold;
             }
-            ul {
+            td ul {
                 margin: 0;
                 padding-left: 1.5rem;
+            }
+            td ul li {
+                margin-bottom: 0.5rem;
             }
             footer {
                 text-align: center;
                 padding: 1rem;
                 background-color: #4caf50;
                 color: white;
-                position: fixed;
                 bottom: 0;
                 width: 100%;
+                box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
             }
         </style>
     </head>
     <body>
+        <header>Employee Allocation System</header>
         <main>
             <section>
-                <div></section>
-                    <h1>Thông tin dự án</h1>
-                    <p><strong>Tên dự án:</strong> {{ project.name }}</p>
-                    <p><strong>Mô tả:</strong> {{ project.description }}</p>
-                    <p><strong>Chi phí:</strong> {{ project.projectcost }}</p>
-                    <p>
-                        <strong>Thời gian thực hiện:</strong> {{
-                        project.duration }} tháng
-                    </p>
-                </div>
+                <h1>Thông tin dự án</h1>
+                <p><strong>Tên dự án:</strong> {{ project.name }}</p>
+                <p><strong>Mô tả:</strong> {{ project.description }}</p>
+                <p><strong>Chi phí:</strong> {{ project.projectcost }}</p>
+                <p>
+                    <strong>Thời gian thực hiện:</strong> {{ project.duration }}
+                    tháng
+                </p>
+            </section>
+            <section>
                 <h2>Phân bổ nhân lực</h2>
                 <table>
                     <thead>
-              </table>          <tr>
+                        <tr>
                             <th>Vai trò</th>
                             <th>Nhân viên</th>
                         </tr>
@@ -108,14 +132,18 @@
                     <tbody>
                         {% for allocation in allocation_result %}
                         <tr>
-                            <td>
+                            <td
+                                value="{{ allocation.role.id if allocation.role else 'undefined' }}"
+                            >
                                 {{ allocation.role.name if allocation.role else
                                 "Không xác định" }}
                             </td>
                             <td>
                                 <ul>
                                     {% for employee in allocation.employees %}
-                                    <li>{{ employee.fullname }}</li>
+                                    <li value="{{ employee.id }}">
+                                        {{ employee.fullname }}
+                                    </li>
                                     {% endfor %}
                                 </ul>
                             </td>
@@ -128,7 +156,44 @@
                 Gửi Phân Bổ
             </button>
         </main>
-
-        
+        <footer>&copy; 2023 Employee Allocation System</footer>
     </body>
+    <script>
+        document
+            .getElementById("submitAllocation")
+            .addEventListener("click", function () {
+                const allocationData = {
+                    project_id: "{{ project.id }}",
+                    allocations: [],
+                };
+                const rows = document.querySelectorAll("tbody tr");
+                rows.forEach((row) => {
+                    const role = row
+                        .querySelector("td:first-child")
+                        .getAttribute("value");
+                    const employees = Array.from(
+                        row.querySelectorAll("li")
+                    ).map((li) => li.getAttribute("value"));
+                    allocationData.allocations.push({ role, employees });
+                });
+                fetch("/save-allocation", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(allocationData),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            window.location.href = "/project/{{ project.id }}";
+                        } else {
+                            alert("Có lỗi xảy ra trong quá trình phân bổ.");
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                    });
+            });
+    </script>
 </html>

@@ -7,6 +7,7 @@ from app.services.resource_allocation import allocate_resources
 import os
 from datetime import datetime as Datetime
 from dotenv import load_dotenv
+import traceback
 main = Blueprint("main", __name__)
 
 @main.route("/")
@@ -294,7 +295,7 @@ def allocation_project_emplyee(project_id):
 
 
 
-@main.route("/api/save-allocation", methods=["POST"])
+@main.route("/save-allocation", methods=["POST"])
 def save_allocation():
     """
     API để lưu thông tin phân bổ nhân lực và dự án.
@@ -302,32 +303,42 @@ def save_allocation():
     try:
         data = request.get_json()
         project_id = data.get("project_id")
-        allocation_data = data.get("allocation")
+        allocation_data = data.get("allocations")
 
         # Xử lý dữ liệu dự án
 
         # Xử lý dữ liệu phân bổ
         for allocation in allocation_data:
-            role_id = allocation.get("role_id")
-            employee_ids = [emp["id"] for emp in allocation.get("employees", [])]
+            role_id = allocation.get("role")
+            employee_ids = allocation.get("employees", [])
             start_date = allocation.get("start_date") or Datetime.now().date()
             end_date = allocation.get("end_date") or None
             salary = 0
 
             for employee_id in employee_ids:
                 # Thêm dữ liệu vào bảng EmployeeProject
-                employee_project = EmployeeProject(
-                    employeeid=employee_id,
-                    projectid=project_id,
-                    roleid=role_id,
-                    startdate=start_date,
-                    enddate=end_date,
-                    salary=salary
-                )
-                db.session.add(employee_project)
+                # Kiểm tra xem bản ghi đã tồn tại trong cơ sở dữ liệu chưa
+                existing_record = EmployeeProject.query.filter_by(
+                    employeeid=int(employee_id),
+                    projectid=int(project_id),
+                    roleid=int(role_id)
+                ).first()
+
+                if not existing_record:
+                    # Nếu chưa tồn tại, thêm bản ghi mới
+                    employee_project = EmployeeProject(
+                        employeeid=int(employee_id),
+                        projectid=int(project_id),
+                        roleid=int(role_id),
+                        startdate=start_date,
+                        enddate=end_date,
+                        salary=float(salary)
+                    )
+                    db.session.add(employee_project)
 
         db.session.commit()
 
-        return jsonify({"message": "Dữ liệu phân bổ đã được lưu thành công."}), 200
+        return jsonify({"success": True}), 200
     except Exception as e:
+        print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
