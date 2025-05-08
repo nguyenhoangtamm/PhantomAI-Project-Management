@@ -7,7 +7,7 @@
         <style>
             body {
                 font-family: "Segoe UI", sans-serif;
-                background-color: #e8f5ff;
+                background-color: #f4f8fb;
                 margin: 0;
                 padding: 30px;
                 color: #2c3e50;
@@ -15,7 +15,7 @@
 
             h1 {
                 text-align: center;
-                color: #34495e;
+                color: #2c3e50;
                 font-size: 2.5rem;
                 margin-bottom: 20px;
             }
@@ -26,19 +26,19 @@
                 background: #ffffff;
                 padding: 30px;
                 border-radius: 15px;
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
                 margin-top: 20px;
             }
 
             .form-group {
-                margin-bottom: 25px;
+                margin-bottom: 20px;
             }
 
             label {
                 display: block;
                 font-weight: 600;
                 margin-bottom: 8px;
-                color: #2c3e50;
+                color: #34495e;
                 font-size: 1rem;
             }
 
@@ -46,7 +46,7 @@
             select {
                 width: 100%;
                 padding: 12px;
-                border-radius: 10px;
+                border-radius: 8px;
                 border: 1px solid #dcdde1;
                 font-size: 1rem;
                 background-color: #f9f9f9;
@@ -60,12 +60,12 @@
             }
 
             button {
-                padding: 14px 25px;
+                padding: 12px 20px;
                 background-color: #3498db;
                 color: white;
                 border: none;
                 font-size: 1rem;
-                border-radius: 10px;
+                border-radius: 8px;
                 cursor: pointer;
                 transition: background-color 0.3s ease, transform 0.2s ease;
             }
@@ -73,6 +73,33 @@
             button:hover {
                 background-color: #2980b9;
                 transform: translateY(-2px);
+            }
+
+            #saveTechBtn {
+                margin-top: 10px;
+                display: inline-block;
+            }
+
+            #selectedTechnologies ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            #selectedTechnologies li {
+                background: #ecf0f1;
+                padding: 10px;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                font-size: 0.95rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            #selectedTechnologies li span {
+                font-weight: bold;
+                color: #2c3e50;
             }
 
             .results {
@@ -86,31 +113,20 @@
                 margin-bottom: 15px;
             }
 
-            .role-block {
-                background-color: #f0f8ff;
+            .results .output {
+                background: #f9f9f9;
                 padding: 20px;
                 border-radius: 12px;
-                margin-bottom: 20px;
-                border: 1px solid #dcdde1;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             }
 
-            .role-block h3 {
-                margin-bottom: 10px;
-                color: #34495e;
-                font-size: 1.2rem;
+            .results button {
+                margin-top: 15px;
+                margin-right: 10px;
             }
 
-            .member {
-                padding: 10px 15px;
-                background: #dfe6e9;
-                border-radius: 8px;
-                margin-bottom: 8px;
-                font-size: 0.95rem;
-            }
-
-            .fit {
-                color: #27ae60;
-                font-weight: bold;
+            .results button:last-child {
+                margin-right: 0;
             }
         </style>
     </head>
@@ -118,82 +134,74 @@
     <body>
         <h1>AI Gợi ý phân bổ nhân lực theo vai trò</h1>
         <form id="form">
-            <div class="container">
-                <div class="form-group">
-                    <label for=" project_name">Tên dự án:</label>
-                    <span> {{ project.name }} </span>
+            <div class="container"></div>
+                <div class="form-group"></div>
+                    <label for="project_name">Tên dự án:</label>
+                    <span>{{ project.name }}</span>
                 </div>
-                <div class="form-group">
+                <div class="form-group"></div>
                     <label for="technology">Chọn công nghệ</label>
                     <select id="technology" name="technology" required>
                         {% for tech in technologies %}
                         <option value="{{ tech.id }}">{{ tech.name }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" id="saveTechBtn">
-                        Lưu công nghệ
-                    </button>
+                    <button type="button" id="saveTechBtn">Lưu công nghệ</button>
                 </div>
                 <div id="selectedTechnologies" class="form-group">
                     <label>Công nghệ đã chọn:</label>
                     <ul id="techList"></ul>
                 </div>
-                <script>
-                    const saveTechBtn = document.getElementById("saveTechBtn");
-                    const techSelect = document.getElementById("technology");
-                    const techList = document.getElementById("techList");
-
-                    saveTechBtn.addEventListener("click", () => {
-                        const selectedOption =
-                            techSelect.options[techSelect.selectedIndex];
-                        const techId = selectedOption.value;
-                        const techName = selectedOption.text;
-
-                        // Kiểm tra nếu công nghệ đã được thêm
-                        if (
-                            ![...techList.children].some(
-                                (li) => li.dataset.id === techId
-                            )
-                        ) {
-                            const li = document.createElement("li");
-                            li.dataset.id = techId;
-                            li.textContent = techName;
-                            techList.appendChild(li);
-                        }
-                    });
-                </script>
-
                 <button type="submit" id="submitBtn">Phân bổ</button>
 
                 <div class="results" id="results">
                     <h2>Kết quả phân bổ:</h2>
-                    <div id="output"></div>
+                    <div id="output" class="output"></div>
                 </div>
             </div>
         </form>
 
         <script>
+            const saveTechBtn = document.getElementById("saveTechBtn");
+            const techSelect = document.getElementById("technology");
+            const techList = document.getElementById("techList");
+
+            saveTechBtn.addEventListener("click", () => {
+                const selectedOption =
+                    techSelect.options[techSelect.selectedIndex];
+                const techId = selectedOption.value;
+                const techName = selectedOption.text;
+
+                if (
+                    ![...techList.children].some(
+                        (li) => li.dataset.id === techId
+                    )
+                ) {
+                    const li = document.createElement("li");
+                    li.dataset.id = techId;
+                    li.innerHTML = `<span>${techName}</span>`;
+                    techList.appendChild(li);
+                }
+            });
+
             document
                 .getElementById("form")
                 .addEventListener("submit", async function (e) {
                     e.preventDefault();
 
                     const formData = new FormData(this);
-
-                    // Thu thập danh sách các ID công nghệ đã chọn
                     const techList = document.getElementById("techList");
                     const selectedTechIds = [...techList.children].map(
                         (li) => li.dataset.id
                     );
 
-                    // Thêm danh sách ID công nghệ vào formData
                     formData.append(
                         "selectedTechnologies",
                         JSON.stringify(selectedTechIds)
                     );
 
                     const data = {
-                        project_id: "{{ project.id }}", // Use the project ID from the template context
+                        project_id: "{{ project.id }}",
                         technologies: formData.get("selectedTechnologies"),
                     };
 
@@ -209,29 +217,20 @@
                     const resultsDiv = document.getElementById("results");
                     const outputDiv = document.getElementById("output");
 
-                    // Hiển thị kết quả
                     resultsDiv.style.display = "block";
-                    outputDiv.innerHTML = ""; // Xóa nội dung cũ
+                    outputDiv.innerHTML = "";
 
                     if (json) {
-                        // Hiển thị thông tin dự án
                         outputDiv.innerHTML += `
-                        <h3>Tên dự án: ${json.project_name}</h3>
-                        <p><strong>Chi phí:</strong> ${json.cost}</p>
-                        <p><strong>Thời gian thực hiện:</strong> ${json.duration} tháng</p>
-                    `;
-                        // Thêm nút xác nhận và hủy bỏ
+                            <h3>Tên dự án: ${json.project_name}</h3>
+                            <p><strong>Chi phí:</strong> ${json.cost}</p>
+                            <p><strong>Thời gian thực hiện:</strong> ${json.duration} tháng</p>
+                        `;
+
                         const confirmButton = document.createElement("button");
                         confirmButton.textContent = "Xác nhận";
-                        confirmButton.style.marginRight = "10px";
-                        confirmButton.style.padding = "10px 20px";
                         confirmButton.style.backgroundColor = "#27ae60";
-                        confirmButton.style.color = "white";
-                        confirmButton.style.border = "none";
-                        confirmButton.style.borderRadius = "5px";
-                        confirmButton.style.cursor = "pointer";
 
-                        // Thêm sự kiện cho nút xác nhận
                         confirmButton.addEventListener("click", async () => {
                             const allocationData = {
                                 project_id: "{{ project.id }}",
@@ -255,7 +254,6 @@
 
                             if (response.ok) {
                                 window.location.href = `/project/${allocationData.project_id}`;
-
                             } else {
                                 alert("Đã xảy ra lỗi khi gửi kết quả phân bổ.");
                             }
@@ -263,25 +261,13 @@
 
                         const cancelButton = document.createElement("button");
                         cancelButton.textContent = "Hủy bỏ";
-                        cancelButton.style.padding = "10px 20px";
                         cancelButton.style.backgroundColor = "#e74c3c";
-                        cancelButton.style.color = "white";
-                        cancelButton.style.border = "none";
-                        cancelButton.style.borderRadius = "5px";
-                        cancelButton.style.cursor = "pointer";
-
-                        // Thêm sự kiện cho nút
-                        confirmButton.addEventListener("click", () => {
-                            resultsDiv.style.display = "none";
-                            outputDiv.innerHTML = "";
-                        });
 
                         cancelButton.addEventListener("click", () => {
                             resultsDiv.style.display = "none";
                             outputDiv.innerHTML = "";
                         });
 
-                        // Thêm nút vào giao diện
                         outputDiv.appendChild(confirmButton);
                         outputDiv.appendChild(cancelButton);
                     } else {
