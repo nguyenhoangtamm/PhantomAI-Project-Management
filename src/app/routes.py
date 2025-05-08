@@ -237,7 +237,7 @@ def phantomai():
 @main.route("/add-allocation-project", methods=["POST"])
 def add_allocation_project():
     """
-    Thêm phân bổ nhân lực cho dự án.
+    Thêm phân bổ nguồn lực cho dự án.
     """
     try:
         data = request.get_json()  # Lấy dữ liệu JSON từ request
@@ -266,3 +266,68 @@ def add_allocation_project():
         return redirect(url_for("main.project_details", project_id=project_id))
     except Exception as e:
         return f"Đã xảy ra lỗi: {str(e)}", 500
+    
+
+
+@main.route("/allocation_project_emplyee/<int:project_id>")
+def allocation_project_emplyee(project_id):
+    """
+    Phân bổ nhân lực cho dự án.
+    """
+    project = Project.query.get_or_404(project_id)
+    allocation_result = allocate_resources( project_id)
+    # Convert employee_ids to employee objects
+    formatted_allocation_result = []
+    for allocation in allocation_result:
+        role_id = allocation.get("role_id")
+        role = Role.query.get(role_id) if role_id else None
+        employee_ids = allocation.get("employee_ids", [])
+        employees = Employee.query.filter(Employee.id.in_(employee_ids)).all()
+        formatted_allocation_result.append({
+            "role": role,
+            "employees": employees
+        })
+
+    allocation_result = formatted_allocation_result
+
+    return render_template("allocation/allocation_employee.html", project=project, allocation_result=allocation_result)
+
+
+
+@main.route("/api/save-allocation", methods=["POST"])
+def save_allocation():
+    """
+    API để lưu thông tin phân bổ nhân lực và dự án.
+    """
+    try:
+        data = request.get_json()
+        project_id = data.get("project_id")
+        allocation_data = data.get("allocation")
+
+        # Xử lý dữ liệu dự án
+
+        # Xử lý dữ liệu phân bổ
+        for allocation in allocation_data:
+            role_id = allocation.get("role_id")
+            employee_ids = [emp["id"] for emp in allocation.get("employees", [])]
+            start_date = allocation.get("start_date") or Datetime.now().date()
+            end_date = allocation.get("end_date") or None
+            salary = 0
+
+            for employee_id in employee_ids:
+                # Thêm dữ liệu vào bảng EmployeeProject
+                employee_project = EmployeeProject(
+                    employeeid=employee_id,
+                    projectid=project_id,
+                    roleid=role_id,
+                    startdate=start_date,
+                    enddate=end_date,
+                    salary=salary
+                )
+                db.session.add(employee_project)
+
+        db.session.commit()
+
+        return jsonify({"message": "Dữ liệu phân bổ đã được lưu thành công."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

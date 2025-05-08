@@ -235,21 +235,27 @@
                         confirmButton.addEventListener("click", async () => {
                             const allocationData = {
                                 project_id: "{{ project.id }}",
-                                technologies: JSON.parse(formData.get("selectedTechnologies")),
+                                technologies: JSON.parse(
+                                    formData.get("selectedTechnologies")
+                                ),
                                 project_cost: json.cost,
                                 project_duration: json.duration,
                             };
 
-                            const response = await fetch("/add-allocation-project", {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify(allocationData),
-                            });
+                            const response = await fetch(
+                                "/add-allocation-project",
+                                {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify(allocationData),
+                                }
+                            );
 
                             if (response.ok) {
-                                alert("Kết quả phân bổ đã được gửi thành công!");
+                                // alert("Phân bổ thành công!");
+                                // window.location.href = `/allocation_employee/${allocationData.project_id}`;
                             } else {
                                 alert("Đã xảy ra lỗi khi gửi kết quả phân bổ.");
                             }
