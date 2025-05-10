@@ -9,6 +9,7 @@ Below is an overview of the project structure and the purpose of each key file o
 -   **`__pycache__`**: Python's bytecode cache directory, automatically generated.
 -   **`.env`**: A file for storing environment variables, typically used for sensitive information or configuration.
 -   **`.gitignore`**: Specifies files and directories that Git should ignore.
+-   **`QLDAPM.sql`**: A SQL file containing the database schema and initial data for the project.
 -   **`README.md`**: This file (you are reading it now) provides an overview of the project.
 -   **`requirements.txt`**: Lists the Python dependencies required for the project.
 
@@ -30,7 +31,13 @@ Below is an overview of the project structure and the purpose of each key file o
 
     ````
 
-3. **Update the configuration**:
+3. **Create Database**
+   Use the `QLDAPM.sql` file to create the database schema and populate it with initial data in PostgreSQL.  
+    Execute the following command in your PostgreSQL environment:  
+    `sql
+    \i QLDAPM.sql
+    `
+4. **Update the configuration**:
    Navigate to the `src` directory
    Modify the `config.py` file to include the following `Config` class for database configuration:
 
@@ -40,8 +47,7 @@ Below is an overview of the project structure and the purpose of each key file o
         SQLALCHEMY_TRACK_MODIFICATIONS = False
     ```
 
-
-4. **Run the application**:  
+5. **Run the application**:  
    Navigate to the `src` directory and execute the `app.py` script:
     ````bash
     cd src
